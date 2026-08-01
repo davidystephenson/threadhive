@@ -1,38 +1,28 @@
+import axios from 'axios';
+
 const API_BASE_URL = "http://localhost:5000/api";
 // const API_BASE_URL = "https://w04-mls.onrender.com/api";
 
-// Utility function to make fetch requests
-export const fetchAPI = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const token = localStorage.getItem("token");
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
-
+// Attach auth token to every request
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  const config = {
-    ...options,
-    headers,
-  };
+// Unwrap the Axios envelope so callers receive the raw JSON body
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => Promise.reject(error),
+);
 
-  const response = await fetch(url, config);
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.message || "API Error");
-    error.response = {
-      status: response.status,
-      data: errorData,
-    };
-    throw error;
-  }
-
-  return response.json();
-};
-
-export default fetchAPI;
+export default apiClient;

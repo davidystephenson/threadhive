@@ -1,11 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleDarkMode as toggleDarkModeAction } from '../store/slices/themeSlice';
 
-const ThemeContext = createContext(null);
-
+// Applies the dark-mode attribute to <html> and keeps it in sync with Redux state
 export function ThemeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
-  });
+  const darkMode = useSelector((state) => state.theme.darkMode);
 
   useEffect(() => {
     if (darkMode) {
@@ -15,17 +14,15 @@ export function ThemeProvider({ children }) {
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    localStorage.setItem('darkMode', newMode);
-    setDarkMode(newMode);
-  };
-
-  return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return children;
 }
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const dispatch = useDispatch();
+  const darkMode = useSelector((state) => state.theme.darkMode);
+
+  return {
+    darkMode,
+    toggleDarkMode: () => dispatch(toggleDarkModeAction()),
+  };
+};
